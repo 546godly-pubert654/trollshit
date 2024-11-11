@@ -1,0 +1,67 @@
+-- fly
+
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+---variables
+local scaffoldEnabled = false
+local blockItemName = "Wool"  
+local originalWalkSpeed = Humanoid.WalkSpeed  
+local scaffoldWalkSpeed = 22  
+
+
+local function EquipBlocks()
+    for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+        if tool:IsA("Tool") and tool.Name:find(blockItemName) then
+            LocalPlayer.Character.Humanoid:EquipTool(tool)
+            return true
+        end
+    end
+    return false
+end
+
+
+local function PlaceBlockBelow()
+    if not scaffoldEnabled then return end
+    
+    local blockPosition = HRP.Position - Vector3.new(0, 3, 0)
+    
+    local newBlock = Instance.new("Part")
+    newBlock.Size = Vector3.new(3, 1, 3)  
+    newBlock.Position = blockPosition
+    newBlock.Anchored = true
+    newBlock.Transparency = 0.5  
+    newBlock.CanCollide = true
+    newBlock.Parent = workspace
+
+    game.Debris:AddItem(newBlock, 0.5)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.V and not gameProcessed then
+        scaffoldEnabled = not scaffoldEnabled
+        if scaffoldEnabled then
+            print("Scaffold enabled")
+            Humanoid.WalkSpeed = scaffoldWalkSpeed  
+            EquipBlocks()
+        else
+            print("Scaffold disabled")
+            Humanoid.WalkSpeed = originalWalkSpeed  
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function(deltaTime)
+    if scaffoldEnabled then
+        if LocalPlayer.Character:FindFirstChildOfClass("Tool") == nil then
+            EquipBlocks()
+        end
+
+        PlaceBlockBelow()
+    end
+end)
