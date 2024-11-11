@@ -1,0 +1,71 @@
+---fuck you snicktrix
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HRP = Character:WaitForChild("HumanoidRootPart")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local slideDistance = 10     -- 
+local slideDuration = 0.3    --
+local spinSpeed = 0        --
+
+local isSliding = false
+local canSlide = true
+local isToggled = false
+
+local function StartSliding()
+    if canSlide then
+        isSliding = true
+        canSlide = false
+        Humanoid.Sit = true
+
+        local targetPosition = HRP.Position + HRP.CFrame.LookVector * slideDistance
+
+        local slideTween = TweenService:Create(
+            HRP,
+            TweenInfo.new(slideDuration, Enum.EasingStyle.Linear),
+            {CFrame = CFrame.new(targetPosition)}
+        )
+
+        local spinConnection
+        spinConnection = RunService.RenderStepped:Connect(function(Delta)
+            if isSliding then
+                Character:SetPrimaryPartCFrame(HRP.CFrame * CFrame.Angles(0, math.rad(spinSpeed * Delta), 0))
+            else
+                spinConnection:Disconnect()
+            end
+        end)
+
+        slideTween:Play()
+        slideTween.Completed:Connect(function()
+            Humanoid.Sit = false
+            isSliding = false
+            wait(0.4)  
+            canSlide = true
+        end)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+
+    if input.KeyCode == Enum.KeyCode.Q and not isSliding then
+        StartSliding()
+    end
+
+    if input.KeyCode == Enum.KeyCode.T then
+        isToggled = not isToggled
+    end
+end)
+
+RunService.RenderStepped:Connect(function(Delta)
+    if isToggled then
+        Character:SetPrimaryPartCFrame(HRP.CFrame * CFrame.Angles(0, math.rad(spinSpeed) * Delta, 0))
+        Humanoid.AutoRotate = false
+    else
+        Humanoid.AutoRotate = true
+    end
+end)
